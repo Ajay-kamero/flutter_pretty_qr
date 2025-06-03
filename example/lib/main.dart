@@ -61,7 +61,9 @@ class _PrettyQrHomePageState extends State<PrettyQrHomePage> {
     qrImage = QrImage(qrCode);
 
     decoration = const PrettyQrDecoration(
-      shape: PrettyQrSmoothSymbol(
+      shape: PrettyQrHybridSymbol(
+        smoothFactor: 3,
+        innerCornerFactor: 1.5,
         color: _PrettyQrSettings.kDefaultQrDecorationBrush,
       ),
       image: _PrettyQrSettings.kDefaultQrDecorationImage,
@@ -73,6 +75,7 @@ class _PrettyQrHomePageState extends State<PrettyQrHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.yellow,
       appBar: AppBar(
         centerTitle: true,
         title: const Text('Pretty QR Code'),
@@ -317,6 +320,10 @@ class _PrettyQrSettingsState extends State<_PrettyQrSettings> {
                     value: PrettyQrRoundedSymbol,
                     child: Text('Rounded rectangle'),
                   ),
+                  const PopupMenuItem(
+                    value: PrettyQrHybridSymbol,
+                    child: Text('Hybrid '),
+                  ),
                 ];
               },
               child: ListTile(
@@ -325,7 +332,9 @@ class _PrettyQrSettingsState extends State<_PrettyQrSettings> {
                 trailing: Text(
                   widget.decoration.shape is PrettyQrSmoothSymbol
                       ? 'Smooth'
-                      : 'Rounded rectangle',
+                      : widget.decoration.shape is PrettyQrRoundedSymbol
+                          ? 'Smooth'
+                          : 'Hybrid',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
@@ -485,13 +494,13 @@ class _PrettyQrSettingsState extends State<_PrettyQrSettings> {
   ) {
     var shape = widget.decoration.shape;
     if (shape.runtimeType == type) return;
-
-    if (shape is PrettyQrSmoothSymbol) {
+    if (shape is PrettyQrHybridSymbol) {
+      shape = PrettyQrHybridSymbol(color: shapeColor);
+    } else if (shape is PrettyQrSmoothSymbol) {
       shape = PrettyQrRoundedSymbol(color: shapeColor);
     } else if (shape is PrettyQrRoundedSymbol) {
       shape = PrettyQrSmoothSymbol(color: shapeColor);
     }
-
     widget.onChanged?.call(widget.decoration.copyWith(shape: shape));
   }
 

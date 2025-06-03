@@ -89,6 +89,39 @@ class PrettyQrMatrix extends Iterable<PrettyQrModule> {
     if (point.x >= dimension - pSide && point.y < pSide) return true;
     return false;
   }
+  
+  /// Returns `true` if the point is part of the inner square (3x3) of one of three Finder Pattern
+  /// components.
+  @nonVirtual
+  bool isInnerFinderPatternPoint(Point<int> point) {
+    // Check if this is a finder pattern point first
+    if (!isFinderPatternPoint(point)) return false;
+    
+    // Define inner finder pattern coordinates
+    const outerSize = kFinderPatternDimension; // 7x7
+    const innerSize = 3; // 3x3
+    const offset = (outerSize - innerSize) ~/ 2; // 2
+    
+    // Top-left finder pattern
+    if (point.x >= offset && point.x < offset + innerSize && 
+        point.y >= offset && point.y < offset + innerSize) {
+      return true;
+    }
+    
+    // Top-right finder pattern
+    if (point.x >= dimension - outerSize + offset && point.x < dimension - outerSize + offset + innerSize && 
+        point.y >= offset && point.y < offset + innerSize) {
+      return true;
+    }
+    
+    // Bottom-left finder pattern
+    if (point.x >= offset && point.x < offset + innerSize && 
+        point.y >= dimension - outerSize + offset && point.y < dimension - outerSize + offset + innerSize) {
+      return true;
+    }
+    
+    return false;
+  }
 
   @override
   Iterator<PrettyQrModule> get iterator {

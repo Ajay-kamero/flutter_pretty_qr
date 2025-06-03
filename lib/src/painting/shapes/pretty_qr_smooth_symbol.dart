@@ -46,6 +46,9 @@ class PrettyQrSmoothSymbol extends PrettyQrShape {
 
       Path modulePath;
       if (module.isDark) {
+        // The finder patterns (3 corner squares) are located in the top-left, top-right, and bottom-left corners
+        // Each pattern is 7x7 modules in size and consists of 3 nested squares (dark 7x7, light 5x5, dark 3x3)
+        // The transformDarkModuleRect function below applies styling to these and all other dark modules
         modulePath = Path();
         modulePath
           ..addRRect(transformDarkModuleRect(moduleRect, moduleNeighbours))
