@@ -23,6 +23,10 @@ class PrettyQrDecorationImage extends DecorationImage {
   /// The padding for the QR image.
   @nonVirtual
   final EdgeInsetsGeometry padding;
+  
+  /// The border radius for the QR image.
+  @nonVirtual
+  final BorderRadius borderRadius;
 
   /// {@macro pretty_qr_code.painting.PrettyQrDecorationImagePosition}
   final PrettyQrDecorationImagePosition position;
@@ -45,8 +49,48 @@ class PrettyQrDecorationImage extends DecorationImage {
     super.invertColors = false,
     super.isAntiAlias = false,
     this.padding = EdgeInsets.zero,
+    this.borderRadius = BorderRadius.zero,
     this.position = PrettyQrDecorationImagePosition.embedded,
   }) : assert(scale >= 0 && scale <= 1);
+  
+  /// Creates an image with rounded corners to show into QR code.
+  /// 
+  /// The [cornerRadius] parameter defines how much rounding to apply to the corners.
+  /// For a circular image, use a radius that is half the image width/height.
+  @factory
+  static PrettyQrDecorationImage rounded({
+    required ImageProvider image,
+    double scale = 0.2,
+    ImageErrorListener? onError,
+    ColorFilter? colorFilter,
+    BoxFit? fit,
+    ImageRepeat repeat = ImageRepeat.noRepeat,
+    bool matchTextDirection = false,
+    double opacity = 1.0,
+    FilterQuality filterQuality = FilterQuality.low,
+    bool invertColors = false,
+    bool isAntiAlias = false,
+    EdgeInsetsGeometry padding = EdgeInsets.zero,
+    double cornerRadius = 8.0,
+    PrettyQrDecorationImagePosition position = PrettyQrDecorationImagePosition.embedded,
+  }) {
+    return PrettyQrDecorationImage(
+      image: image,
+      scale: scale,
+      onError: onError,
+      colorFilter: colorFilter,
+      fit: fit,
+      repeat: repeat,
+      matchTextDirection: matchTextDirection,
+      opacity: opacity,
+      filterQuality: filterQuality,
+      invertColors: invertColors,
+      isAntiAlias: isAntiAlias,
+      padding: padding,
+      borderRadius: BorderRadius.all(Radius.circular(cornerRadius)),
+      position: position,
+    );
+  }
 
   /// Creates a copy of this [PrettyQrDecorationImage] but with the given fields
   /// replaced with the new values.
@@ -65,6 +109,7 @@ class PrettyQrDecorationImage extends DecorationImage {
     final bool? invertColors,
     final bool? isAntiAlias,
     final EdgeInsetsGeometry? padding,
+    final BorderRadius? borderRadius,
     final PrettyQrDecorationImagePosition? position,
   }) {
     return PrettyQrDecorationImage(
@@ -80,6 +125,7 @@ class PrettyQrDecorationImage extends DecorationImage {
       invertColors: invertColors ?? this.invertColors,
       isAntiAlias: isAntiAlias ?? this.isAntiAlias,
       padding: padding ?? this.padding,
+      borderRadius: borderRadius ?? this.borderRadius,
       position: position ?? this.position,
     );
   }
@@ -106,6 +152,7 @@ class PrettyQrDecorationImage extends DecorationImage {
         scale: b.scale * t,
         opacity: b.opacity * t,
         padding: EdgeInsetsGeometry.lerp(null, b.padding, t)!,
+        borderRadius: BorderRadius.lerp(BorderRadius.zero, b.borderRadius, t),
       );
     }
 
@@ -114,6 +161,7 @@ class PrettyQrDecorationImage extends DecorationImage {
         scale: a.scale * (1.0 - t),
         opacity: a.opacity * (1.0 - t),
         padding: EdgeInsetsGeometry.lerp(a.padding, null, t)!,
+        borderRadius: BorderRadius.lerp(a.borderRadius, BorderRadius.zero, t),
       );
     }
 
@@ -121,12 +169,13 @@ class PrettyQrDecorationImage extends DecorationImage {
       scale: lerpDouble(a.scale, b.scale, t)!,
       opacity: lerpDouble(a.opacity, b.opacity, t)!,
       padding: EdgeInsetsGeometry.lerp(a.padding, b.padding, t)!,
+      borderRadius: BorderRadius.lerp(a.borderRadius, b.borderRadius, t),
     );
   }
 
   @override
   int get hashCode {
-    return super.hashCode ^ Object.hash(runtimeType, padding);
+    return super.hashCode ^ Object.hash(runtimeType, padding, borderRadius);
   }
 
   @override
@@ -137,6 +186,7 @@ class PrettyQrDecorationImage extends DecorationImage {
     return other is PrettyQrDecorationImage &&
         super == other &&
         other.padding == padding &&
+        other.borderRadius == borderRadius &&
         other.position == position;
   }
 }

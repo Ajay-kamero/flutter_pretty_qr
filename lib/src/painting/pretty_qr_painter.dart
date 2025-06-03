@@ -90,12 +90,36 @@ class PrettyQrPainter {
       final imageCroppedRect = imagePadding.deflateRect(imageScaledRect);
 
       _decorationImagePainter ??= image.createPainter(onChanged);
-      _decorationImagePainter?.paint(
-        context.canvas,
-        imageCroppedRect,
-        null,
-        configuration.copyWith(size: imageCroppedRect.size),
-      );
+      
+      // Apply rounded corners if borderRadius is set
+      if (image.borderRadius != BorderRadius.zero) {
+        final rrect = RRect.fromRectAndCorners(
+          imageCroppedRect,
+          topLeft: image.borderRadius.topLeft,
+          topRight: image.borderRadius.topRight,
+          bottomLeft: image.borderRadius.bottomLeft,
+          bottomRight: image.borderRadius.bottomRight,
+        );
+        
+        context.canvas.save();
+        context.canvas.clipRRect(rrect);
+        
+        _decorationImagePainter?.paint(
+          context.canvas,
+          imageCroppedRect,
+          null,
+          configuration.copyWith(size: imageCroppedRect.size),
+        );
+        
+        context.canvas.restore();
+      } else {
+        _decorationImagePainter?.paint(
+          context.canvas,
+          imageCroppedRect,
+          null,
+          configuration.copyWith(size: imageCroppedRect.size),
+        );
+      }
     }
 
     if (image?.position != PrettyQrDecorationImagePosition.foreground) {

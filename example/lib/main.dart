@@ -228,8 +228,8 @@ class _PrettyQrSettings extends StatefulWidget {
 
   @visibleForTesting
   static const kDefaultQrDecorationImage = PrettyQrDecorationImage(
-    image: AssetImage('images/flutter.png'),
-    position: PrettyQrDecorationImagePosition.embedded,
+    image: AssetImage('images/android12splash copy.png'),
+    position: PrettyQrDecorationImagePosition.embedded,borderRadius: BorderRadius.all(Radius.circular(10))
   );
 
   @visibleForTesting

@@ -18,7 +18,7 @@ A highly customizable Flutter widget that makes it easy to render QR codes. Buil
 * [**Live Preview**](https://promops.github.io/flutter_pretty_qr/)
 * **Shapes** - The widget provides functionality for rendering various built-in shapes, namely [smooth](https://pub.dev/documentation/pretty_qr_code/latest/pretty_qr_code/PrettyQrSmoothSymbol-class.html) and [rounded](https://pub.dev/documentation/pretty_qr_code/latest/pretty_qr_code/PrettyQrRoundedSymbol-class.html), or you can even create your patterns using the package API.
 * **Themes** - Allows you easily switch between themes using the [material theme extension](https://pub.dev/documentation/pretty_qr_code/latest/pretty_qr_code/PrettyQrTheme-class.html).
-* **Branding** - Configure the display of the embedded image and adjust its style to best fit your needs.
+* **Branding** - Configure the display of the embedded image and adjust its style to best fit your needs. Supports rounded corners and circular images.
 * **Exporting** - Save the QR сode as an image for sharing, embedding, or anything else.
 * **Customization** - Customize the appearance by setting the shape color or filling with a [gradient](https://pub.dev/documentation/pretty_qr_code/latest/pretty_qr_code/PrettyQrBrush-class.html).
 
