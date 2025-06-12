@@ -30,6 +30,14 @@ class PrettyQrDecorationImage extends DecorationImage {
 
   /// {@macro pretty_qr_code.painting.PrettyQrDecorationImagePosition}
   final PrettyQrDecorationImagePosition position;
+  
+  /// A fallback image to use when the primary image fails to load.
+  /// 
+  /// If the primary [image] fails to load or render, this fallback image
+  /// will be used instead. If both the primary and fallback images fail,
+  /// no image will be displayed in the QR code.
+  @nonVirtual
+  final ImageProvider? fallbackImage;
 
   /// Creates an image to show into QR code.
   ///
@@ -51,6 +59,7 @@ class PrettyQrDecorationImage extends DecorationImage {
     this.padding = EdgeInsets.zero,
     this.borderRadius = BorderRadius.zero,
     this.position = PrettyQrDecorationImagePosition.embedded,
+    this.fallbackImage,
   }) : assert(scale >= 0 && scale <= 1);
   
   /// Creates an image with rounded corners to show into QR code.
@@ -73,6 +82,7 @@ class PrettyQrDecorationImage extends DecorationImage {
     EdgeInsetsGeometry padding = EdgeInsets.zero,
     double cornerRadius = 8.0,
     PrettyQrDecorationImagePosition position = PrettyQrDecorationImagePosition.embedded,
+    ImageProvider? fallbackImage,
   }) {
     return PrettyQrDecorationImage(
       image: image,
@@ -89,6 +99,7 @@ class PrettyQrDecorationImage extends DecorationImage {
       padding: padding,
       borderRadius: BorderRadius.all(Radius.circular(cornerRadius)),
       position: position,
+      fallbackImage: fallbackImage,
     );
   }
 
@@ -111,6 +122,7 @@ class PrettyQrDecorationImage extends DecorationImage {
     final EdgeInsetsGeometry? padding,
     final BorderRadius? borderRadius,
     final PrettyQrDecorationImagePosition? position,
+    final ImageProvider? fallbackImage,
   }) {
     return PrettyQrDecorationImage(
       image: image ?? this.image,
@@ -127,6 +139,7 @@ class PrettyQrDecorationImage extends DecorationImage {
       padding: padding ?? this.padding,
       borderRadius: borderRadius ?? this.borderRadius,
       position: position ?? this.position,
+      fallbackImage: fallbackImage ?? this.fallbackImage,
     );
   }
 
@@ -175,7 +188,7 @@ class PrettyQrDecorationImage extends DecorationImage {
 
   @override
   int get hashCode {
-    return super.hashCode ^ Object.hash(runtimeType, padding, borderRadius);
+    return super.hashCode ^ Object.hash(runtimeType, padding, borderRadius, fallbackImage);
   }
 
   @override
@@ -187,6 +200,7 @@ class PrettyQrDecorationImage extends DecorationImage {
         super == other &&
         other.padding == padding &&
         other.borderRadius == borderRadius &&
-        other.position == position;
+        other.position == position &&
+        other.fallbackImage == fallbackImage;
   }
 }

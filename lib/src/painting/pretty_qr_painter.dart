@@ -29,6 +29,22 @@ class PrettyQrPainter {
   /// The painter for a [PrettyQrDecorationImage].
   @protected
   DecorationImagePainter? _decorationImagePainter;
+  
+  /// The painter for the fallback image if the primary image fails.
+  @protected  
+  DecorationImagePainter? _fallbackImagePainter;
+  
+  /// Cached aspect ratio of the loaded image
+  @protected
+  double? _imageAspectRatio;
+  
+  /// Flag to track if we've attempted to resolve the image
+  @protected
+  bool _imageResolutionAttempted = false;
+  
+  /// Flag to track if the primary image failed and we should use fallback
+  @protected
+  bool _useFallbackImage = false;
 
   /// Creates a QR code painter.
   PrettyQrPainter({
@@ -64,17 +80,57 @@ class PrettyQrPainter {
     if (image != null) {
       final size = context.estimatedBounds.size;
       final imageScale = image.scale.clamp(0.0, 1.0);
-      final imageScaledRect = Rect.fromCenter(
-        center: size.center(Offset.zero),
-        width: size.width * imageScale,
-        height: size.height * imageScale,
-      );
+      
+      // Create the image painter
+      _decorationImagePainter ??= image.createPainter(onChanged);
+      
+      // Attempt to resolve image dimensions if not already done
+      if (!_imageResolutionAttempted) {
+        _imageResolutionAttempted = true;
+        _resolveImageAspectRatio(image, configuration);
+      }
+      
+      // Calculate the area based on actual image aspect ratio if available
+      final baseSize = size.width * imageScale;
+      late final Rect imageScaledRect;
+      late final Rect moduleClearingRect;
+      
+      if (_imageAspectRatio != null && _imageAspectRatio! > 0) {
+        // Use the detected aspect ratio to calculate proper dimensions
+        final aspectRatio = _imageAspectRatio!;
+        late final double imageWidth, imageHeight;
+        
+        if (aspectRatio >= 1.0) {
+          // Landscape or square: width is the constraining dimension
+          imageWidth = baseSize;
+          imageHeight = baseSize / aspectRatio;
+        } else {
+          // Portrait: height is the constraining dimension
+          imageHeight = baseSize;
+          imageWidth = baseSize * aspectRatio;
+        }
+        
+        imageScaledRect = Rect.fromCenter(
+          center: size.center(Offset.zero),
+          width: imageWidth,
+          height: imageHeight,
+        );
+        moduleClearingRect = imageScaledRect;
+      } else {
+        // Fallback to square for backward compatibility or when aspect ratio can't be determined
+        imageScaledRect = Rect.fromCenter(
+          center: size.center(Offset.zero),
+          width: baseSize,
+          height: baseSize,
+        );
+        moduleClearingRect = imageScaledRect;
+      }
 
-      // clear space for the embedded image
+      // Clear space for the embedded image
       if (image.position == PrettyQrDecorationImagePosition.embedded) {
         for (final module in context.matrix) {
           final moduleRect = module.resolveRect(context);
-          if (imageScaledRect.overlaps(moduleRect)) {
+          if (moduleClearingRect.overlaps(moduleRect)) {
             context.matrix.removeDarkAt(module.x, module.y);
           }
         }
@@ -89,7 +145,34 @@ class PrettyQrPainter {
       );
       final imageCroppedRect = imagePadding.deflateRect(imageScaledRect);
 
+      // Create painters for both primary and fallback images
       _decorationImagePainter ??= image.createPainter(onChanged);
+      
+      if (image.fallbackImage != null && _fallbackImagePainter == null) {
+        // Create a fallback image painter with the same properties but different image
+        final fallbackImageDecoration = PrettyQrDecorationImage(
+          image: image.fallbackImage!,
+          scale: image.scale,
+          onError: image.onError,
+          colorFilter: image.colorFilter,
+          fit: image.fit,
+          repeat: image.repeat,
+          matchTextDirection: image.matchTextDirection,
+          opacity: image.opacity,
+          filterQuality: image.filterQuality,
+          invertColors: image.invertColors,
+          isAntiAlias: image.isAntiAlias,
+          padding: image.padding,
+          borderRadius: image.borderRadius,
+          position: image.position,
+        );
+        _fallbackImagePainter = fallbackImageDecoration.createPainter(onChanged);
+      }
+      
+      // Choose which painter to use
+      final painterToUse = _useFallbackImage && _fallbackImagePainter != null 
+          ? _fallbackImagePainter! 
+          : _decorationImagePainter!;
       
       // Apply rounded corners if borderRadius is set
       if (image.borderRadius != BorderRadius.zero) {
@@ -104,7 +187,7 @@ class PrettyQrPainter {
         context.canvas.save();
         context.canvas.clipRRect(rrect);
         
-        _decorationImagePainter?.paint(
+        painterToUse.paint(
           context.canvas,
           imageCroppedRect,
           null,
@@ -113,7 +196,7 @@ class PrettyQrPainter {
         
         context.canvas.restore();
       } else {
-        _decorationImagePainter?.paint(
+        painterToUse.paint(
           context.canvas,
           imageCroppedRect,
           null,
@@ -126,11 +209,88 @@ class PrettyQrPainter {
       decoration.shape.paint(context);
     }
   }
+  
+  /// Attempts to resolve the image and extract its aspect ratio
+  void _resolveImageAspectRatio(PrettyQrDecorationImage image, ImageConfiguration configuration) {
+    try {
+      final imageStream = image.image.resolve(configuration);
+      late ImageStreamListener listener;
+      
+      listener = ImageStreamListener(
+        (ImageInfo imageInfo, bool synchronousCall) {
+          imageStream.removeListener(listener);
+          final loadedImage = imageInfo.image;
+          if (loadedImage.width > 0 && loadedImage.height > 0) {
+            _imageAspectRatio = loadedImage.width / loadedImage.height;
+            _useFallbackImage = false; // Primary image loaded successfully
+            // Trigger a repaint with the new aspect ratio
+            onChanged();
+          }
+          imageInfo.dispose();
+        },
+        onError: (exception, stackTrace) {
+          imageStream.removeListener(listener);
+          // Primary image failed, try fallback if available
+          if (image.fallbackImage != null) {
+            _tryFallbackImage(image, configuration);
+          } else {
+            // No fallback available, keep default square behavior
+            _useFallbackImage = false;
+          }
+        },
+      );
+      
+      imageStream.addListener(listener);
+    } catch (e) {
+      // If resolution fails, try fallback or keep default square behavior
+      if (image.fallbackImage != null) {
+        _tryFallbackImage(image, configuration);
+      } else {
+        _useFallbackImage = false;
+      }
+    }
+  }
+  
+  /// Attempts to resolve the fallback image
+  void _tryFallbackImage(PrettyQrDecorationImage image, ImageConfiguration configuration) {
+    if (image.fallbackImage == null) return;
+    
+    try {
+      final fallbackStream = image.fallbackImage!.resolve(configuration);
+      late ImageStreamListener fallbackListener;
+      
+      fallbackListener = ImageStreamListener(
+        (ImageInfo imageInfo, bool synchronousCall) {
+          fallbackStream.removeListener(fallbackListener);
+          final fallbackImage = imageInfo.image;
+          if (fallbackImage.width > 0 && fallbackImage.height > 0) {
+            _imageAspectRatio = fallbackImage.width / fallbackImage.height;
+            _useFallbackImage = true; // Use fallback image
+            // Trigger a repaint with the fallback image
+            onChanged();
+          }
+          imageInfo.dispose();
+        },
+        onError: (exception, stackTrace) {
+          fallbackStream.removeListener(fallbackListener);
+          // Both primary and fallback failed, keep default behavior
+          _useFallbackImage = false;
+        },
+      );
+      
+      fallbackStream.addListener(fallbackListener);
+    } catch (e) {
+      // Fallback resolution failed, keep default behavior
+      _useFallbackImage = false;
+    }
+  }
 
   /// Discard any resources being held by the object.
   @mustCallSuper
   void dispose() {
     _decorationImagePainter?.dispose();
     _decorationImagePainter = null;
+    _fallbackImagePainter?.dispose();
+    _fallbackImagePainter = null;
   }
 }
