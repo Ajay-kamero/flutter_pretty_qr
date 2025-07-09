@@ -85,7 +85,8 @@ extension PrettyQrImageExtension on QrImage {
         decorationImageStream.addListener(imageStreamListener);
       }
     } catch (error, stackTrace) {
-      imageCompleter.completeError(error, stackTrace);
+      print('Error creating QR image: $error, $stackTrace');
+      rethrow;
     }
 
     return imageCompleter.future.whenComplete(() {

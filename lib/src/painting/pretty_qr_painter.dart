@@ -176,25 +176,48 @@ class PrettyQrPainter {
       
       // Apply rounded corners if borderRadius is set
       if (image.borderRadius != BorderRadius.zero) {
-        final rrect = RRect.fromRectAndCorners(
-          imageCroppedRect,
-          topLeft: image.borderRadius.topLeft,
-          topRight: image.borderRadius.topRight,
-          bottomLeft: image.borderRadius.bottomLeft,
-          bottomRight: image.borderRadius.bottomRight,
-        );
-        
-        context.canvas.save();
-        context.canvas.clipRRect(rrect);
-        
-        painterToUse.paint(
-          context.canvas,
-          imageCroppedRect,
-          null,
-          configuration.copyWith(size: imageCroppedRect.size),
-        );
-        
-        context.canvas.restore();
+        // Safety check to ensure we have a valid rect before proceeding
+        if (imageCroppedRect != null &&
+            !imageCroppedRect.isEmpty &&
+            imageCroppedRect.isFinite) {
+          try {
+            final rrect = RRect.fromRectAndCorners(
+              imageCroppedRect,
+              topLeft: image.borderRadius.topLeft,
+              topRight: image.borderRadius.topRight,
+              bottomLeft: image.borderRadius.bottomLeft,
+              bottomRight: image.borderRadius.bottomRight,
+            );
+
+            context.canvas.save();
+            context.canvas.clipRRect(rrect);
+
+            painterToUse.paint(
+              context.canvas,
+              imageCroppedRect,
+              null,
+              configuration.copyWith(size: imageCroppedRect.size),
+            );
+
+            context.canvas.restore();
+          } catch (e) {
+            // Fallback to the non-rounded version if there's an error
+            painterToUse.paint(
+              context.canvas,
+              imageCroppedRect,
+              null,
+              configuration.copyWith(size: imageCroppedRect.size),
+            );
+          }
+        } else {
+          // If the rect is invalid, just paint without rounded corners
+          painterToUse.paint(
+            context.canvas,
+            imageCroppedRect,
+            null,
+            configuration.copyWith(size: imageCroppedRect.size),
+          );
+        }
       } else {
         painterToUse.paint(
           context.canvas,
